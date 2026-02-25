@@ -396,7 +396,7 @@
         const pos  = parseInt(posMatch[1], 10);
         const lines = text.slice(0, pos).split('\n');
         const line  = lines.length;
-        const col   = lines[lines.length - 1].length + 1;
+        const col   = lines[lines.length - 1].length;
         detail = `${msg} (line ${line}, column ${col})`;
       } else if (!lcMatch) {
         // Compute position manually for engines that give neither
@@ -444,7 +444,20 @@
     return value;
   }
 
-  inputEl.addEventListener('input', () => validate(inputEl.value));
+  // Debounced real-time validation to avoid parsing on every keystroke
+  let validateTimeoutId = null;
+  const VALIDATE_DEBOUNCE_DELAY = 400; // milliseconds
+
+  function debouncedValidateInput() {
+    if (validateTimeoutId !== null) {
+      clearTimeout(validateTimeoutId);
+    }
+    validateTimeoutId = setTimeout(() => {
+      validate(inputEl.value);
+    }, VALIDATE_DEBOUNCE_DELAY);
+  }
+
+  inputEl.addEventListener('input', debouncedValidateInput);
 
   // ── Beautify ───────────────────────────────────────────────────────────────
 
@@ -496,13 +509,45 @@
   // ── Drag & Drop ────────────────────────────────────────────────────────────
 
   function readFile(file) {
-    if (!file || !file.name.endsWith('.json')) return;
+    const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB limit to avoid memory issues
+
+    if (!file) {
+      return;
+    }
+
+    const fileName = file.name || '';
+    const fileType = file.type || '';
+    const isJsonType = fileType === 'application/json' || fileType === 'text/json';
+    const isJsonName = /\.json$/i.test(fileName);
+
+    if (!isJsonType && !isJsonName) {
+      alert('Only JSON files are supported.');
+      return;
+    }
+
+    if (typeof file.size === 'number' && file.size > MAX_FILE_SIZE_BYTES) {
+      alert('The selected file is too large to be processed safely in the browser.');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
-      inputEl.value = e.target.result;
-      validate(inputEl.value);
+      inputEl.value = e.target && typeof e.target.result === 'string' ? e.target.result : '';
+      if (inputEl.value) {
+        validate(inputEl.value);
+      }
     };
-    reader.readAsText(file);
+    reader.onerror = () => {
+      console.error('Failed to read the selected file via FileReader.');
+      alert('Failed to read the selected file.');
+    };
+
+    try {
+      reader.readAsText(file);
+    } catch (err) {
+      console.error('FileReader.readAsText threw an error:', err);
+      alert('An unexpected error occurred while reading the file.');
+    }
   }
 
   ['dragenter', 'dragover'].forEach(evt => {
