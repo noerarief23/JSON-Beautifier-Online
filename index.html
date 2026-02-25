@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JSON Beautifier Online</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 1rem 1.5rem;
+      background: #1a1d27;
+      border-bottom: 1px solid #2d3148;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #7c83fd;
+      letter-spacing: 0.02em;
+    }
+
+    header .logo {
+      width: 32px;
+      height: 32px;
+      background: #7c83fd;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      gap: 1rem;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      background: #1a1d27;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      border: 1px solid #2d3148;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .toolbar-sep {
+      width: 1px;
+      height: 28px;
+      background: #2d3148;
+      margin: 0 0.25rem;
+    }
+
+    button {
+      padding: 0.45rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    button:active { transform: scale(0.97); }
+    button:focus-visible { outline: 2px solid #7c83fd; outline-offset: 2px; }
+
+    .btn-primary  { background: #7c83fd; color: #fff; }
+    .btn-primary:hover  { background: #6970e8; }
+
+    .btn-secondary { background: #2d3148; color: #c4c9f0; }
+    .btn-secondary:hover { background: #383d5a; }
+
+    .btn-success  { background: #22c55e; color: #fff; }
+    .btn-success:hover  { background: #16a34a; }
+
+    .btn-info     { background: #0ea5e9; color: #fff; }
+    .btn-info:hover     { background: #0284c7; }
+
+    label {
+      font-size: 0.82rem;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+
+    select {
+      background: #2d3148;
+      color: #e2e8f0;
+      border: 1px solid #3d4468;
+      border-radius: 6px;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    select:focus { outline: 2px solid #7c83fd; outline-offset: 2px; }
+
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-wrap input[type="checkbox"] {
+      width: 36px;
+      height: 20px;
+      appearance: none;
+      background: #2d3148;
+      border-radius: 99px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .toggle-wrap input[type="checkbox"]::after {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: left 0.2s;
+    }
+
+    .toggle-wrap input[type="checkbox"]:checked { background: #7c83fd; }
+    .toggle-wrap input[type="checkbox"]:checked::after { left: 19px; }
+    .toggle-wrap input[type="checkbox"]:focus-visible { outline: 2px solid #7c83fd; outline-offset: 2px; }
+
+    .editors {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      flex: 1;
+    }
+
+    @media (max-width: 768px) {
+      .editors { grid-template-columns: 1fr; }
+      .toolbar-sep { display: none; }
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      overflow: hidden;
+      min-height: 400px;
+    }
+
+    .panel-header {
+      padding: 0.5rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: #161820;
+      border-bottom: 1px solid #2d3148;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel textarea {
+      flex: 1;
+      width: 100%;
+      background: transparent;
+      color: #e2e8f0;
+      border: none;
+      resize: none;
+      padding: 0.85rem;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      outline: none;
+      min-height: 360px;
+    }
+
+    .panel textarea::placeholder { color: #3d4468; }
+
+    .panel.drag-over {
+      border-color: #7c83fd;
+      box-shadow: 0 0 0 2px rgba(124, 131, 253, 0.3);
+    }
+
+    .error-bar {
+      font-size: 0.8rem;
+      color: #f87171;
+      padding: 0.4rem 0.85rem;
+      background: rgba(248, 113, 113, 0.1);
+      border-top: 1px solid rgba(248, 113, 113, 0.2);
+      display: none;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .error-bar.visible { display: flex; }
+
+    .valid-badge {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 99px;
+      font-weight: 600;
+    }
+
+    .valid-badge.ok  { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .valid-badge.err { background: rgba(248,113,113,0.15); color: #f87171; }
+
+    .drop-hint {
+      font-size: 0.75rem;
+      color: #3d4468;
+      text-align: center;
+      padding: 0.4rem;
+      border-top: 1px solid #2d3148;
+    }
+
+    footer {
+      text-align: center;
+      padding: 0.75rem;
+      font-size: 0.75rem;
+      color: #3d4468;
+      border-top: 1px solid #1a1d27;
+    }
+
+    #copy-feedback {
+      font-size: 0.75rem;
+      color: #4ade80;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    #copy-feedback.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo" aria-hidden="true">{ }</div>
+  <h1>JSON Beautifier Online</h1>
+</header>
+
+<main>
+  <div class="toolbar" role="toolbar" aria-label="JSON tools">
+    <div class="toolbar-group">
+      <button class="btn-primary" id="btn-beautify" aria-label="Beautify JSON">
+        <span aria-hidden="true">✦</span> Beautify
+      </button>
+      <button class="btn-secondary" id="btn-minify" aria-label="Minify JSON">
+        <span aria-hidden="true">⇢</span> Minify
+      </button>
+    </div>
+
+    <div class="toolbar-sep" role="separator"></div>
+
+    <div class="toolbar-group">
+      <label for="indent-select">Indent:</label>
+      <select id="indent-select" aria-label="Select indentation size">
+        <option value="2">2 spaces</option>
+        <option value="4">4 spaces</option>
+      </select>
+    </div>
+
+    <div class="toolbar-sep" role="separator"></div>
+
+    <div class="toolbar-group">
+      <label class="toggle-wrap" for="sort-keys">
+        <input type="checkbox" id="sort-keys" aria-label="Sort object keys recursively" />
+        Sort keys
+      </label>
+    </div>
+
+    <div class="toolbar-sep" role="separator"></div>
+
+    <div class="toolbar-group">
+      <button class="btn-success" id="btn-copy" aria-label="Copy output to clipboard">
+        <span aria-hidden="true">⎘</span> Copy
+      </button>
+      <span id="copy-feedback" role="status" aria-live="polite">Copied!</span>
+      <button class="btn-info" id="btn-download" aria-label="Download output as JSON file">
+        <span aria-hidden="true">↓</span> Download
+      </button>
+    </div>
+  </div>
+
+  <div class="editors">
+    <!-- Input Panel -->
+    <div class="panel" id="input-panel" role="region" aria-label="JSON input">
+      <div class="panel-header">
+        <span>Input</span>
+        <span id="valid-badge" class="valid-badge" aria-live="polite"></span>
+      </div>
+      <textarea
+        id="input"
+        placeholder='Paste JSON here or drop a .json file…'
+        aria-label="JSON input"
+        aria-describedby="error-msg"
+        spellcheck="false"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+      ></textarea>
+      <div id="error-msg" class="error-bar" role="alert" aria-live="assertive">
+        <span aria-hidden="true">⚠</span>
+        <span id="error-text"></span>
+      </div>
+      <div class="drop-hint" aria-hidden="true">Drag &amp; drop a .json file to load</div>
+    </div>
+
+    <!-- Output Panel -->
+    <div class="panel" role="region" aria-label="JSON output">
+      <div class="panel-header">Output</div>
+      <textarea
+        id="output"
+        readonly
+        placeholder="Output will appear here…"
+        aria-label="JSON output"
+        spellcheck="false"
+      ></textarea>
+    </div>
+  </div>
+</main>
+
+<footer>JSON Beautifier Online — 100% client-side, nothing leaves your browser.</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  const inputEl   = document.getElementById('input');
+  const outputEl  = document.getElementById('output');
+  const errorMsg  = document.getElementById('error-msg');
+  const errorText = document.getElementById('error-text');
+  const validBadge = document.getElementById('valid-badge');
+  const indentSel = document.getElementById('indent-select');
+  const sortKeys  = document.getElementById('sort-keys');
+  const inputPanel = document.getElementById('input-panel');
+  const copyFeedback = document.getElementById('copy-feedback');
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  function getIndent() {
+    return parseInt(indentSel.value, 10);
+  }
+
+  /**
+   * Parse JSON and return { value, error }.
+   * On error, extract line/column from the native error message.
+   */
+  function parseJSON(text) {
+    try {
+      return { value: JSON.parse(text), error: null };
+    } catch (e) {
+      const msg = e.message || String(e);
+      // Native engines include "at position N" or "line N column N"
+      let detail = msg;
+      const posMatch = msg.match(/at position (\d+)/i);
+      const lcMatch  = msg.match(/line (\d+) column (\d+)/i);
+
+      if (posMatch) {
+        const pos  = parseInt(posMatch[1], 10);
+        const lines = text.slice(0, pos).split('\n');
+        const line  = lines.length;
+        const col   = lines[lines.length - 1].length;
+        detail = `${msg} (line ${line}, column ${col})`;
+      } else if (!lcMatch) {
+        // Compute position manually for engines that give neither
+        detail = msg;
+      }
+
+      return { value: null, error: detail };
+    }
+  }
+
+  /**
+   * Recursively sort object keys.
+   */
+  function sortObjectKeys(val) {
+    if (Array.isArray(val)) return val.map(sortObjectKeys);
+    if (val !== null && typeof val === 'object') {
+      const sorted = {};
+      Object.keys(val).sort().forEach(k => { sorted[k] = sortObjectKeys(val[k]); });
+      return sorted;
+    }
+    return val;
+  }
+
+  // ── Validation (real-time) ────────────────────────────────────────────────
+
+  function validate(text) {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      errorMsg.classList.remove('visible');
+      validBadge.textContent = '';
+      validBadge.className = 'valid-badge';
+      return null;
+    }
+    const { value, error } = parseJSON(trimmed);
+    if (error) {
+      errorText.textContent = error;
+      errorMsg.classList.add('visible');
+      validBadge.textContent = 'Invalid';
+      validBadge.className = 'valid-badge err';
+      return null;
+    }
+    errorMsg.classList.remove('visible');
+    validBadge.textContent = 'Valid';
+    validBadge.className = 'valid-badge ok';
+    return value;
+  }
+
+  // Debounced real-time validation to avoid parsing on every keystroke
+  let validateTimeoutId = null;
+  const VALIDATE_DEBOUNCE_DELAY = 400; // milliseconds
+
+  function debouncedValidateInput() {
+    if (validateTimeoutId !== null) {
+      clearTimeout(validateTimeoutId);
+    }
+    validateTimeoutId = setTimeout(() => {
+      validate(inputEl.value);
+    }, VALIDATE_DEBOUNCE_DELAY);
+  }
+
+  inputEl.addEventListener('input', debouncedValidateInput);
+
+  // ── Beautify ───────────────────────────────────────────────────────────────
+
+  document.getElementById('btn-beautify').addEventListener('click', () => {
+    const parsed = validate(inputEl.value);
+    if (parsed === null) return;
+    const data = sortKeys.checked ? sortObjectKeys(parsed) : parsed;
+    outputEl.value = JSON.stringify(data, null, getIndent());
+  });
+
+  // ── Minify ─────────────────────────────────────────────────────────────────
+
+  document.getElementById('btn-minify').addEventListener('click', () => {
+    const parsed = validate(inputEl.value);
+    if (parsed === null) return;
+    const data = sortKeys.checked ? sortObjectKeys(parsed) : parsed;
+    outputEl.value = JSON.stringify(data);
+  });
+
+  // ── Copy ───────────────────────────────────────────────────────────────────
+
+  document.getElementById('btn-copy').addEventListener('click', async () => {
+    const text = outputEl.value;
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      outputEl.select();
+      document.execCommand('copy');
+    }
+    copyFeedback.classList.add('show');
+    setTimeout(() => copyFeedback.classList.remove('show'), 1800);
+  });
+
+  // ── Download ───────────────────────────────────────────────────────────────
+
+  document.getElementById('btn-download').addEventListener('click', () => {
+    const text = outputEl.value;
+    if (!text) return;
+    const blob = new Blob([text], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'output.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  });
+
+  // ── Drag & Drop ────────────────────────────────────────────────────────────
+
+  function readFile(file) {
+    const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB limit to avoid memory issues
+
+    if (!file) {
+      return;
+    }
+
+    const fileName = file.name || '';
+    const fileType = file.type || '';
+    const isJsonType = fileType === 'application/json' || fileType === 'text/json';
+    const isJsonName = /\.json$/i.test(fileName);
+
+    if (!isJsonType && !isJsonName) {
+      alert('Only JSON files are supported.');
+      return;
+    }
+
+    if (typeof file.size === 'number' && file.size > MAX_FILE_SIZE_BYTES) {
+      alert('The selected file is too large to be processed safely in the browser.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      inputEl.value = e.target && typeof e.target.result === 'string' ? e.target.result : '';
+      if (inputEl.value) {
+        validate(inputEl.value);
+      }
+    };
+    reader.onerror = () => {
+      console.error('Failed to read the selected file via FileReader.');
+      alert('Failed to read the selected file.');
+    };
+
+    try {
+      reader.readAsText(file);
+    } catch (err) {
+      console.error('FileReader.readAsText threw an error:', err);
+      alert('An unexpected error occurred while reading the file.');
+    }
+  }
+
+  ['dragenter', 'dragover'].forEach(evt => {
+    inputPanel.addEventListener(evt, (e) => {
+      e.preventDefault();
+      inputPanel.classList.add('drag-over');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(evt => {
+    inputPanel.addEventListener(evt, (e) => {
+      e.preventDefault();
+      inputPanel.classList.remove('drag-over');
+    });
+  });
+
+  inputPanel.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    readFile(file);
+  });
+
+}());
+</script>
+
+</body>
+</html>
